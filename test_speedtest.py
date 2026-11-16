@@ -57,27 +57,27 @@ class MeasureTest(unittest.TestCase):
         self.server.shutdown()
         self.server.server_close()
 
-    def test_warmup_plus_ten_downloads_over_one_connection(self):
+    def test_ten_downloads_over_one_connection(self):
         ok, failed = speedtest.measure(self.base + "/")
         self.assertEqual((len(ok), failed), (10, 0))
         self.assertEqual(sum(size for *_, size in ok), 10 * len(PAYLOAD))
         self.assertTrue(all(sec >= body_sec > 0 for sec, body_sec, _ in ok))
-        self.assertEqual((Handler.hits, Handler.connections), (11, 1))
+        self.assertEqual((Handler.hits, Handler.connections), (10, 1))
 
     def test_redirect_is_followed(self):
         ok, failed = speedtest.measure(self.base + "/redirect")
         self.assertEqual((len(ok), failed), (10, 0))
-        self.assertEqual((Handler.hits, Handler.connections), (22, 1))
+        self.assertEqual((Handler.hits, Handler.connections), (20, 1))
 
     def test_429_is_retried(self):
         ok, failed = speedtest.measure(self.base + "/busy")
         self.assertEqual((len(ok), failed), (10, 0))
-        self.assertEqual(Handler.hits, 22)
+        self.assertEqual(Handler.hits, 20)
 
     def test_broken_connection_is_retried_then_counted(self):
         ok, failed = speedtest.measure(self.base + "/cut")
         self.assertEqual((len(ok), failed), (0, 10))
-        self.assertEqual(Handler.hits, 11 * (speedtest.MAX_RETRIES + 1))
+        self.assertEqual(Handler.hits, 10 * (speedtest.MAX_RETRIES + 1))
 
 
 class RetryDelayTest(unittest.TestCase):

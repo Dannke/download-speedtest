@@ -1,4 +1,4 @@
-"""Измеряет скорость скачивания: прогрев + 10 последовательных запросов к одному URL по одному соединению."""
+"""Измеряет скорость скачивания: 10 последовательных запросов к одному URL по одному соединению."""
 import http.client
 import statistics
 import sys
@@ -97,27 +97,24 @@ def fetch_with_retries(conns, url):
             if isinstance(e, ConnectionRefusedError):
                 raise
             delay, reason = retry_delay(None, attempt), e
-        print(f"         повтор через {delay:.1f} с: {reason}")
+        print(f"     повтор через {delay:.1f} с: {reason}")
         time.sleep(delay)
     return fetch(conns, url)  # последняя попытка: ошибка уходит наверх
 
 
 def measure(url, n=REQUESTS):
-    """Прогрев + n запросов. Возвращает (успешные (время, время тела, байты), число ошибок); прогрев не учитывается."""
+    """n запросов. Возвращает (успешные (время, время тела, байты), число ошибок)."""
     conns, ok, failed = {}, [], 0
     try:
-        for i in range(n + 1):
-            label = f"#{i:>2}" if i else "прогрев"
+        for i in range(1, n + 1):
             try:
                 sec, body_sec, size = fetch_with_retries(conns, url)
             except (OSError, http.client.HTTPException) as e:  # таймаут и ошибки сокета — подклассы OSError
-                if i:
-                    failed += 1
-                print(f"{label:>7}: ошибка: {e}")
+                failed += 1
+                print(f"#{i:>2}: ошибка: {e}")
                 continue
-            if i:
-                ok.append((sec, body_sec, size))
-            print(f"{label:>7}: {size / 1e6:8.2f} MB за {sec:6.3f} с" + ("" if i else "  (не учитывается)"))
+            ok.append((sec, body_sec, size))
+            print(f"#{i:>2}: {size / 1e6:8.2f} MB за {sec:6.3f} с")
     finally:
         for conn in conns.values():
             conn.close()
